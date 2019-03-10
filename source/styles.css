@@ -1,0 +1,19 @@
+.transformation-container {
+  padding: 0.8rem;
+}
+
+.container {
+  display: flex;
+}
+
+.container .output-text {
+  max-height: 300px;
+  overflow-y: scroll;
+  width: 600px;
+  border: 1px solid lightslategray;
+}
+
+textarea,
+code {
+  font-family: 'Operator Mono Lig';
+}
