@@ -1,8 +1,14 @@
 import { h } from 'preact'
 import { useEffect, useRef, useReducer } from 'preact/hooks'
 
+import { CodeBlock } from './CodeBlock'
+import { CodeEditor } from './CodeEditor'
+
 import './styles.css'
 
+/**
+ * @description To measure a string in bytes
+ */
 function measure(input: string) {
   return new Blob([input]).size
 }
@@ -21,48 +27,75 @@ type State = {
   minify: boolean
 }
 
-const transformerReducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case 'CHANGE_INPUT':
-      return {
-        ...state,
-        inputValue: action.value
-      }
+const useTS = (useTypeScript: boolean, inputText: string): string => {
+  const ts = useRef(null)
 
-    case 'UPDATE_OUTPUT':
-      return {
-        ...state,
-        outputText: action.value,
-        byteCount: measure(action.value)
-      }
+  useEffect(() => {
+    if (useTypeScript && !ts.current) {
+      /**
+       * @see https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API#transpiling-a-single-file
+       */
+      import(/* webpackChunkName: "typescript" */ 'typescript').then(module => {
+        ts.current = module.transpileModule
+      })
+    }
+  }, [useTypeScript])
 
-    case 'USE_TYPE_SCRIPT':
-      return {
-        ...state,
-        useTypeScript: action.checked
+  if (ts.current && useTypeScript) {
+    const { outputText } = ts.current(inputText, {
+      compilerOptions: {
+        jsx: 2, // React
+        target: 6 // ESNEXT
       }
-    case 'USE_TERSER':
-      return {
-        ...state,
-        minify: action.checked
-      }
-
-    default:
-      return state
+    })
+    return outputText
   }
+
+  return inputText
 }
 
 const App = () => {
-  const [state, dispatch] = useReducer(transformerReducer, {
-    byteCount: 0,
-    inputValue: '',
-    outputText: '',
-    useTypeScript: false,
-    minify: false
-  })
+  const [state, dispatch] = useReducer(
+    function transformerReducer(state: State, action: Action): State {
+      switch (action.type) {
+        case 'CHANGE_INPUT':
+          return {
+            ...state,
+            inputValue: action.value
+          }
+
+        case 'UPDATE_OUTPUT':
+          return {
+            ...state,
+            outputText: action.value,
+            byteCount: measure(action.value)
+          }
+
+        case 'USE_TYPE_SCRIPT':
+          return {
+            ...state,
+            useTypeScript: action.checked
+          }
+        case 'USE_TERSER':
+          return {
+            ...state,
+            minify: action.checked
+          }
+
+        default:
+          return state
+      }
+    },
+    {
+      byteCount: 0,
+      inputValue: '',
+      outputText: '',
+      useTypeScript: false,
+      minify: false
+    }
+  )
 
   const terser = useRef(null)
-  const ts = useRef(null)
 
   useEffect(() => {
     if (state.minify && !terser.current) {
@@ -73,41 +106,24 @@ const App = () => {
   }, [state.minify])
 
   useEffect(() => {
-    if (state.useTypeScript && !ts.current) {
-      import(/* webpackChunkName: "typescript" */ 'typescript').then(module => {
-        ts.current = module.transpileModule
-      })
-    }
-  }, [state.useTypeScript])
-
-  useEffect(() => {
-    const output = state.inputValue
-    let returnString = output
-
-    if (state.useTypeScript && ts.current) {
-      const { outputText } = ts.current(output, {
-        compilerOptions: {
-          jsx: 2, // React
-          target: 6 // ESNEXT
-        }
-      })
-
-      returnString = outputText
-    }
+    const fromTypeScriptCompiler = useTS(state.useTypeScript, state.inputValue)
+    let returnString = fromTypeScriptCompiler
 
     // MINIFY
     if (state.minify && terser.current) {
       const { code } = terser.current.minify(returnString)
 
       returnString = code
+    } else if (!state.minify) {
+      returnString = fromTypeScriptCompiler
     }
 
     dispatch({ type: 'UPDATE_OUTPUT', value: returnString })
-  }, [state.inputValue, state.minify])
+  })
 
   return (
     <div class="container">
-      <InputArea dispatch={dispatch} />
+      <CodeEditor dispatch={dispatch} />
       <div>
         <OutputArea
           dispatch={dispatch}
@@ -118,31 +134,6 @@ const App = () => {
         />
       </div>
     </div>
-  )
-}
-
-const InputArea = ({ dispatch }) => {
-  const textAreaRef = useRef(null)
-
-  const handleChange = e => {
-    if (textAreaRef.current.value) {
-      const inputCode = textAreaRef.current.value
-
-      dispatch({ type: 'CHANGE_INPUT', value: inputCode })
-    }
-  }
-
-  return (
-    <textarea
-      ref={textAreaRef}
-      style={{
-        height: '80vh',
-        width: '40%',
-        resize: 'none'
-      }}
-      placeholder="put yer code here"
-      onInput={handleChange}
-    />
   )
 }
 
@@ -180,9 +171,9 @@ const OutputArea = ({ dispatch, processedOutput, byteCount, useTypeScript, minif
 
       <div>bytes: {byteCount}</div>
       <div class="output-text">
-        <pre>
+        <CodeBlock>
           <code>{processedOutput}</code>
-        </pre>
+        </CodeBlock>
       </div>
     </div>
   )

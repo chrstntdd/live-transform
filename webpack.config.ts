@@ -1,14 +1,23 @@
 const path = require('path')
+const fs = require('fs')
 const webpack = require('webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const WebpackModules = require('webpack-modules')
+const InterpolatePlugin = require('react-dev-utils/InterpolateHtmlPlugin')
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 const IS_DEVELOPMENT = process.env.NODE_ENV === 'development'
 
 const publicPath = '/'
 
-module.exports = {
+try {
+  var normalizeString = fs.readFileSync(
+    path.join(__dirname, 'node_modules/normalize.css/normalize.css'),
+    'UTF-8'
+  )
+} catch (error) {}
+
+const config = {
   context: __dirname,
 
   mode: IS_PRODUCTION ? 'production' : IS_DEVELOPMENT && 'development',
@@ -26,6 +35,12 @@ module.exports = {
     overlay: {
       warnings: true,
       errors: true
+    }
+  },
+
+  optimization: {
+    splitChunks: {
+      chunks: 'all'
     }
   },
 
@@ -55,7 +70,10 @@ module.exports = {
           {
             test: /\.tsx?$/,
             exclude: /node_modules/,
-            loader: 'ts-loader'
+            loader: 'ts-loader',
+            options: {
+              transpileOnly: true
+            }
           },
 
           {
@@ -71,8 +89,6 @@ module.exports = {
   },
 
   plugins: [
-    new WebpackModules(),
-
     // Generates an `index.html` file with the <script> injected.
     new HtmlWebpackPlugin(
       Object.assign(
@@ -100,6 +116,12 @@ module.exports = {
       )
     ),
 
+    new InterpolatePlugin(HtmlWebpackPlugin, {
+      NORMALIZE: '<style>' + normalizeString + '</style>'
+    }),
+
+    new WebpackModules(),
+
     IS_DEVELOPMENT && new webpack.HotModuleReplacementPlugin()
   ].filter(Boolean),
 
@@ -114,3 +136,5 @@ module.exports = {
 
   performance: false
 }
+
+module.exports = config
