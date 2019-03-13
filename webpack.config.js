@@ -3,10 +3,13 @@ const fs = require('fs')
 const webpack = require('webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const WebpackModules = require('webpack-modules')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const InterpolatePlugin = require('react-dev-utils/InterpolateHtmlPlugin')
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 const IS_DEVELOPMENT = process.env.NODE_ENV === 'development'
+
+const { clientDevBuild } = require('./paths')
 
 const publicPath = '/'
 
@@ -28,7 +31,7 @@ const config = {
 
   devServer: {
     compress: true,
-    contentBase: path.resolve(__dirname, 'dist'),
+    contentBase: clientDevBuild,
     historyApiFallback: true,
     useLocalIp: true,
     host: '0.0.0.0',
@@ -47,7 +50,7 @@ const config = {
   entry: path.resolve(__dirname, 'source/index'),
 
   output: {
-    path: IS_PRODUCTION ? path.resolve(__dirname, 'dist') : undefined,
+    path: IS_PRODUCTION ? clientDevBuild : undefined,
     pathinfo: IS_DEVELOPMENT,
     filename: 'static/js/[name].[hash:8].js',
     chunkFilename: 'static/js/[name].[chunkhash:8].chunk.js',
@@ -79,7 +82,7 @@ const config = {
           {
             test: /\.css/,
             use: [
-              IS_DEVELOPMENT && { loader: 'style-loader' },
+              IS_PRODUCTION ? MiniCssExtractPlugin.loader : 'style-loader',
               { loader: 'css-loader', options: { sourceMap: true } }
             ].filter(Boolean)
           }
@@ -119,6 +122,12 @@ const config = {
     new InterpolatePlugin(HtmlWebpackPlugin, {
       NORMALIZE: '<style>' + normalizeString + '</style>'
     }),
+
+    IS_PRODUCTION &&
+      new MiniCssExtractPlugin({
+        filename: './static/css/main.[contenthash:8].css',
+        chunkFilename: './static/css/[id].[contenthash:8].css'
+      }),
 
     new WebpackModules(),
 
