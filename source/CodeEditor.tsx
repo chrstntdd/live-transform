@@ -1,16 +1,24 @@
 import { h } from 'preact'
 import { useRef, useEffect } from 'preact/hooks'
-import codemirror from 'codemirror'
-import 'codemirror/addon/comment/comment'
-import 'codemirror/lib/codemirror.css'
 
 const CodeEditor = ({ dispatch }) => {
   const cmRef = useRef(null)
+  const codeMirrorModuleRef = useRef(null)
   const textAreaRef = useRef(null)
 
   useEffect(() => {
-    if (textAreaRef.current) {
-      const cm = codemirror.fromTextArea(textAreaRef.current, {
+    const fetchCodeMirror = async () => {
+      codeMirrorModuleRef.current = await import(/* webpackChunkName: "codemirror" */ 'codemirror').then(
+        module => module.default
+      )
+    }
+
+    fetchCodeMirror()
+  }, [])
+
+  useEffect(() => {
+    if (textAreaRef.current && codeMirrorModuleRef.current) {
+      const cm = codeMirrorModuleRef.current.fromTextArea(textAreaRef.current, {
         // value: String(this.props.value || ''),
         value: textContent,
         mode: 'tsx',
@@ -37,7 +45,7 @@ const CodeEditor = ({ dispatch }) => {
     return () => {
       cmRef.current = null
     }
-  }, [])
+  }, [codeMirrorModuleRef.current])
 
   return <textarea ref={textAreaRef} autocomplete="off" defaultValue={textContent} />
 }

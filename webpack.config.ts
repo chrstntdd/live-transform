@@ -1,21 +1,33 @@
-const path = require('path')
-const fs = require('fs')
-const webpack = require('webpack')
-const HtmlWebpackPlugin = require('html-webpack-plugin')
-const WebpackModules = require('webpack-modules')
-const MiniCssExtractPlugin = require('mini-css-extract-plugin')
-const InterpolatePlugin = require('react-dev-utils/InterpolateHtmlPlugin')
+import path from 'path'
+import fs from 'fs'
+import webpack from 'webpack'
+import HtmlWebpackPlugin from 'html-webpack-plugin'
+import WebpackModules from 'webpack-modules'
+import MiniCssExtractPlugin from 'mini-css-extract-plugin'
+import CleanWebpackPlugin from 'clean-webpack-plugin'
+import InterpolatePlugin from 'react-dev-utils/InterpolateHtmlPlugin'
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 const IS_DEVELOPMENT = process.env.NODE_ENV === 'development'
+const IS_SSR = process.env.SSR === 'true'
 
-const { clientDevBuild } = require('./paths')
+import { clientDevBuild, serverProdBuild, serverDevBuild } from './paths'
 
 const publicPath = '/'
 
 try {
   var normalizeString = fs.readFileSync(
     path.join(__dirname, 'node_modules/normalize.css/normalize.css'),
+    'UTF-8'
+  )
+
+  var prismThemeString = fs.readFileSync(
+    path.join(__dirname, 'node_modules/prismjs/themes/prism.css'),
+    'UTF-8'
+  )
+
+  var codeMirrorString = fs.readFileSync(
+    path.join(__dirname, 'node_modules/codemirror/lib/codemirror.css'),
     'UTF-8'
   )
 } catch (error) {}
@@ -44,13 +56,20 @@ const config = {
   optimization: {
     splitChunks: {
       chunks: 'all'
-    }
+    },
+    runtimeChunk: !IS_SSR
   },
 
   entry: path.resolve(__dirname, 'source/index'),
 
   output: {
-    path: IS_PRODUCTION ? clientDevBuild : undefined,
+    path: IS_PRODUCTION
+      ? clientDevBuild
+      : IS_SSR && IS_PRODUCTION
+      ? serverProdBuild
+      : IS_SSR && IS_DEVELOPMENT
+      ? serverDevBuild
+      : undefined,
     pathinfo: IS_DEVELOPMENT,
     filename: 'static/js/[name].[hash:8].js',
     chunkFilename: 'static/js/[name].[chunkhash:8].chunk.js',
@@ -75,7 +94,8 @@ const config = {
             exclude: /node_modules/,
             loader: 'ts-loader',
             options: {
-              transpileOnly: true
+              transpileOnly: true,
+              configFile: 'tsconfig.client.json'
             }
           },
 
@@ -119,8 +139,12 @@ const config = {
       )
     ),
 
+    new CleanWebpackPlugin(),
+
     new InterpolatePlugin(HtmlWebpackPlugin, {
-      NORMALIZE: '<style>' + normalizeString + '</style>'
+      NORMALIZE: '<style>' + normalizeString + '</style>',
+      PRISM_JS_THEME: '<style>' + prismThemeString + '</style>',
+      CODE_MIRROR_STYLES: '<style>' + codeMirrorString + '</style>'
     }),
 
     IS_PRODUCTION &&
@@ -146,4 +170,4 @@ const config = {
   performance: false
 }
 
-module.exports = config
+export default config

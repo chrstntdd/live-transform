@@ -1,9 +1,12 @@
-const express = require('express')
-const bodyParser = require('body-parser')
-const compression = require('compression')
-const morgan = require('morgan')
+import express from 'express'
+import fs from 'fs'
+import bodyParser from 'body-parser'
+import compression from 'compression'
+import morgan from 'morgan'
 
-const { clientDevBuild } = require('../paths')
+import { clientDevBuild } from '../paths'
+
+import { universalHandler } from './universal-handler'
 
 const app = express()
 
@@ -22,13 +25,20 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(morgan('dev'))
 
 const PORT = process.env.PORT || 3000
+const SSR = process.env.SSR
 const env = app.get('env')
 
-app.use(express.static(clientDevBuild))
+app.get(
+  '*',
+  SSR
+    ? universalHandler
+    : (_, res) => {
+        const src = fs.createReadStream(clientDevBuild + '/index.html')
+        src.pipe(res)
+      }
+)
 
-app.get('*', (req, res) => {
-  res.sendFile(clientDevBuild + '/index.html')
-})
+app.use(express.static(clientDevBuild))
 
 let server
 
@@ -57,4 +67,4 @@ const closeServer = async () =>
 
 process.on('SIGINT', closeServer)
 
-require.main === module && runServer().catch(err => console.error(err))
+runServer().catch(err => console.error(err))

@@ -4,7 +4,9 @@ import { useEffect, useRef, useReducer } from 'preact/hooks'
 import { CodeBlock } from './CodeBlock'
 import { CodeEditor } from './CodeEditor'
 
-import './styles.css'
+if (typeof window !== 'undefined') {
+  require('./styles.css')
+}
 
 /**
  * @description To measure a string in bytes
