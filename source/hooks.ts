@@ -1,8 +1,6 @@
 import { useRef, useEffect, Ref } from 'preact/hooks'
 
-type ModuleFetcher<T> = () => Promise<T>
-
-const useModule = <ModuleType>(moduleFetcher: ModuleFetcher<ModuleType>): ModuleType | null => {
+const useModule = <ModuleType>(moduleFetcher: () => Promise<ModuleType>): ModuleType | null => {
   const module: Ref<ModuleType> = useRef(null)
 
   useEffect(() => {

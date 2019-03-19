@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "codemirror": "^5.44.0",
-    "esm": "^3.2.18",
     "preact": "^10.0.0-alpha.2",
     "preact-render-to-string": "^5.0.1",
     "prismjs": "^1.15.0",
