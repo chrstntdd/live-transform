@@ -1,24 +1,19 @@
 import { h } from 'preact'
 import { useRef, useEffect } from 'preact/hooks'
 
+import { useModule } from './hooks'
+
 const CodeEditor = ({ dispatch }) => {
   const cmRef = useRef(null)
-  const codeMirrorModuleRef = useRef(null)
   const textAreaRef = useRef(null)
+  const codeMirrorModule = useModule(
+    async () =>
+      await import(/* webpackChunkName: "codemirror" */ 'codemirror').then(module => module.default)
+  )
 
   useEffect(() => {
-    const fetchCodeMirror = async () => {
-      codeMirrorModuleRef.current = await import(/* webpackChunkName: "codemirror" */ 'codemirror').then(
-        module => module.default
-      )
-    }
-
-    fetchCodeMirror()
-  }, [])
-
-  useEffect(() => {
-    if (textAreaRef.current && codeMirrorModuleRef.current) {
-      const cm = codeMirrorModuleRef.current.fromTextArea(textAreaRef.current, {
+    if (textAreaRef.current && codeMirrorModule) {
+      const cm = codeMirrorModule.fromTextArea(textAreaRef.current, {
         // value: String(this.props.value || ''),
         value: textContent,
         mode: 'tsx',
@@ -45,7 +40,7 @@ const CodeEditor = ({ dispatch }) => {
     return () => {
       cmRef.current = null
     }
-  }, [codeMirrorModuleRef.current])
+  }, [codeMirrorModule])
 
   return <textarea ref={textAreaRef} autocomplete="off" defaultValue={textContent} />
 }

@@ -4,7 +4,7 @@ import bodyParser from 'body-parser'
 import compression from 'compression'
 import morgan from 'morgan'
 
-import { clientDevBuild } from '../paths'
+import { clientDevBuild, serverProdBuild } from '../paths'
 
 import { universalHandler } from './universal-handler'
 
@@ -38,7 +38,7 @@ app.get(
       }
 )
 
-app.use(express.static(clientDevBuild))
+app.use(express.static(env === 'production' ? serverProdBuild : clientDevBuild))
 
 let server
 

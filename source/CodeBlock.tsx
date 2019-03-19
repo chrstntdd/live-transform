@@ -1,28 +1,22 @@
 import { h } from 'preact'
-import { useRef, useEffect } from 'preact/hooks'
+
+import { useModule } from './hooks'
 
 const CodeBlock = ({ children, ...props }) => {
-  const prismJSModule = useRef(null)
-
-  useEffect(() => {
-    const fetchPrismJS = async () => {
-      prismJSModule.current = await import(/* webpackChunkName: "prismjs" */ 'prismjs').then(
-        module => module.default
-      )
-    }
-
-    fetchPrismJS()
-  }, [])
+  const prismJSModule = useModule(
+    async () =>
+      await import(/* webpackChunkName: "prismjs" */ 'prismjs').then(module => module.default)
+  )
 
   let child = children
   let isHighlight = child && child.type === 'code'
 
-  if (isHighlight && child.props.children && prismJSModule.current) {
+  if (isHighlight && child.props.children && prismJSModule) {
     let text = child.props.children.replace(/(^\s+|\s+$)/g, '')
-    let highlighted = prismJSModule.current.highlight(
+    let highlighted = prismJSModule.highlight(
       text,
-      prismJSModule.current.languages.javascript,
-      'javascript'
+      prismJSModule.languages.javascript,
+      prismJSModule.languages.javascript
     )
     return (
       <pre class={`language-javascript  ${props.class || ''}`}>
