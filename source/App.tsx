@@ -173,7 +173,7 @@ const OutputArea = ({ dispatch, processedOutput, byteCount, useTypeScript, minif
 
       <div>bytes: {byteCount}</div>
       <div class="output-text">
-        <CodeBlock>
+        <CodeBlock isMinified={minify}>
           <code>{processedOutput}</code>
         </CodeBlock>
       </div>

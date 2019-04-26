@@ -14,7 +14,6 @@ const CodeEditor = ({ dispatch }) => {
   useEffect(() => {
     if (textAreaRef.current && codeMirrorModule) {
       const cm = codeMirrorModule.fromTextArea(textAreaRef.current, {
-        // value: String(this.props.value || ''),
         value: textContent,
         mode: 'tsx',
         theme: 'one-dark',
@@ -118,7 +117,6 @@ const Fold: React.FC<FoldProps> = ({ label, id, sectionId, children }) => {
         aria-controls={sectionId}
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
-        // aria-selected={} TODO
       >
         {label}
       </div>
