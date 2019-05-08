@@ -8,14 +8,14 @@ const CodeEditor = ({ dispatch }) => {
   const textAreaRef = useRef(null)
   const codeMirrorModule = useModule(
     async () =>
-      await import(/* webpackChunkName: "codemirror" */ 'codemirror').then(module => module.default)
+      await import(/* webpackChunkName: "codemirror" */ 'codemirror').then(module => module)
   )
 
   useEffect(() => {
     if (textAreaRef.current && codeMirrorModule) {
       const cm = codeMirrorModule.fromTextArea(textAreaRef.current, {
         value: textContent,
-        mode: 'tsx',
+        mode: 'javascript',
         theme: 'one-dark',
         lineNumbers: true,
         indentWithTabs: false,
@@ -135,4 +135,4 @@ const Fold: React.FC<FoldProps> = ({ label, id, sectionId, children }) => {
 
 export { Accordion, Fold }`
 
-export { CodeEditor }
+export { CodeEditor, textContent }

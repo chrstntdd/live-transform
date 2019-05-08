@@ -20,16 +20,12 @@
   overflow-y: auto;
 }
 
-.language-javascript {
-  overflow: hidden !important;
-  tab-size: 2 !important;
-}
-.language-javascript.minified {
-  white-space: unset !important;
-}
-
 pre > code {
   font-family: 'Operator Mono Lig', Menlo, Consolas, Monaco, 'Andale Mono', 'Courier New', monospace !important;
+}
+
+pre[class*='language-'].minified code[class*='language-'] {
+  white-space: normal;
 }
 
 .CodeMirror {

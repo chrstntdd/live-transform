@@ -2,7 +2,7 @@ import { h } from 'preact'
 
 import { useModule } from './hooks'
 
-const CodeBlock = ({ children, isMinified, ...props }) => {
+const CodeBlock = ({ children, minifyOutput, ...props }) => {
   const prismJSModule = useModule(
     async () =>
       await import(/* webpackChunkName: "prismjs" */ 'prismjs').then(module => module.default)
@@ -19,7 +19,7 @@ const CodeBlock = ({ children, isMinified, ...props }) => {
       prismJSModule.languages.javascript
     )
     return (
-      <pre class={`language-javascript  ${props.class || ''} ${isMinified ? 'minified' : ''}`}>
+      <pre class={`language-javascript  ${props.class || ''} ${minifyOutput ? 'minified' : ''}`}>
         <code dangerouslySetInnerHTML={{ __html: highlighted }} />
       </pre>
     )

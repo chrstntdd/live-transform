@@ -1,21 +1,17 @@
-import { useRef, useEffect, Ref } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 
 const useModule = <ModuleType>(moduleFetcher: () => Promise<ModuleType>): ModuleType | null => {
-  const module: Ref<ModuleType> = useRef(null)
+  const [module, setModule] = useState(() => void 0)
 
   useEffect(() => {
     const fetchModule = async () => {
-      module.current = await moduleFetcher()
+      setModule(await moduleFetcher())
     }
 
     fetchModule()
-
-    return () => {
-      module.current = null
-    }
   }, [])
 
-  return module && module.current
+  return module
 }
 
 export { useModule }

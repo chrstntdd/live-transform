@@ -1,8 +1,8 @@
-import { h } from 'preact'
-import { useEffect, useRef, useReducer } from 'preact/hooks'
+import { h, Component } from 'preact'
+import { useEffect, useRef, useReducer, useCallback } from 'preact/hooks'
 
 import { CodeBlock } from './CodeBlock'
-import { CodeEditor } from './CodeEditor'
+import { CodeEditor, textContent } from './CodeEditor'
 
 if (typeof window !== 'undefined') {
   require('./styles.css')
@@ -20,107 +20,116 @@ type Action =
   | { type: 'UPDATE_OUTPUT'; value: string }
   | { type: 'USE_TYPE_SCRIPT'; checked: boolean }
   | { type: 'USE_TERSER'; checked: boolean }
+  | { type: 'LOADED_TERSER'; payload: typeof import('terser').minify }
+  | { type: 'LOADED_TYPESCRIPT'; payload: typeof import('typescript').transpileModule }
 
 type State = {
   byteCount: number
   inputValue: string
   outputText: string
   useTypeScript: boolean
-  minify: boolean
+  typeScriptModule: undefined | typeof import('typescript').transpileModule
+  minifyOutput: boolean
+  terserModule: undefined | typeof import('terser').minify
 }
 
-const useTS = (useTypeScript: boolean, inputText: string): string => {
-  const ts = useRef(null)
-
-  useEffect(() => {
-    if (useTypeScript && !ts.current) {
-      /**
-       * @see https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API#transpiling-a-single-file
-       */
-      import(/* webpackChunkName: "typescript" */ 'typescript').then(module => {
-        ts.current = module.transpileModule
-      })
-    }
-  }, [useTypeScript])
-
-  if (ts.current && useTypeScript) {
-    const { outputText } = ts.current(inputText, {
-      compilerOptions: {
-        jsx: 2, // React
-        target: 6 // ESNEXT
+const appReducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case 'CHANGE_INPUT':
+      return {
+        ...state,
+        inputValue: action.value
       }
-    })
-    return outputText
-  }
 
-  return inputText
+    case 'UPDATE_OUTPUT':
+      return {
+        ...state,
+        outputText: action.value,
+        byteCount: measure(action.value)
+      }
+
+    case 'USE_TYPE_SCRIPT':
+      return {
+        ...state,
+        useTypeScript: action.checked
+      }
+
+    case 'USE_TERSER':
+      return {
+        ...state,
+        minifyOutput: action.checked
+      }
+
+    case 'LOADED_TERSER':
+      return {
+        ...state,
+        minifyOutput: true,
+        terserModule: action.payload
+      }
+
+    case 'LOADED_TYPESCRIPT':
+      return {
+        ...state,
+        useTypeScript: true,
+        typeScriptModule: action.payload
+      }
+
+    default:
+      return state
+  }
 }
+
+const init = () => ({
+  byteCount: 0,
+  inputValue: textContent,
+  outputText: textContent,
+  useTypeScript: false,
+  typeScriptModule: void 0,
+  minifyOutput: false,
+  terserModule: void 0
+})
 
 const App = () => {
-  const [state, dispatch] = useReducer(
-    function transformerReducer(state: State, action: Action): State {
-      switch (action.type) {
-        case 'CHANGE_INPUT':
-          return {
-            ...state,
-            inputValue: action.value
-          }
-
-        case 'UPDATE_OUTPUT':
-          return {
-            ...state,
-            outputText: action.value,
-            byteCount: measure(action.value)
-          }
-
-        case 'USE_TYPE_SCRIPT':
-          return {
-            ...state,
-            useTypeScript: action.checked
-          }
-        case 'USE_TERSER':
-          return {
-            ...state,
-            minify: action.checked
-          }
-
-        default:
-          return state
-      }
-    },
-    {
-      byteCount: 0,
-      inputValue: '',
-      outputText: '',
-      useTypeScript: false,
-      minify: false
-    }
-  )
-
-  const terser = useRef(null)
+  const [state, dispatch] = useReducer(appReducer, void 0, init)
 
   useEffect(() => {
-    if (state.minify && !terser.current) {
+    if (state.minifyOutput && !state.terserModule) {
       import(/* webpackChunkName: "terser" */ 'terser').then(module => {
-        terser.current = module || module.default
+        dispatch({ type: 'LOADED_TERSER', payload: module.minify })
       })
     }
-  }, [state.minify])
 
-  useEffect(() => {
-    const fromTypeScriptCompiler = useTS(state.useTypeScript, state.inputValue)
-    let returnString = fromTypeScriptCompiler
-
-    // MINIFY
-    if (state.minify && terser.current) {
-      const { code } = terser.current.minify(returnString)
-
-      returnString = code
-    } else if (!state.minify) {
-      returnString = fromTypeScriptCompiler
+    if (state.useTypeScript && !state.typeScriptModule) {
+      import(/* webpackChunkName: "typescript" */ 'typescript').then(module => {
+        dispatch({ type: 'LOADED_TYPESCRIPT', payload: module.transpileModule })
+      })
     }
 
-    dispatch({ type: 'UPDATE_OUTPUT', value: returnString })
+    // NAIVE APPROACH - minifiying the output without converting the source to pure JS causes terser to error
+    let current = state.inputValue
+
+    if (state.useTypeScript && state.typeScriptModule) {
+      const { outputText } = state.typeScriptModule(state.inputValue, {
+        compilerOptions: {
+          jsx: 2, // React
+          target: 6 // ESNEXT
+        }
+      })
+
+      current = outputText
+    }
+
+    if (state.minifyOutput && state.terserModule) {
+      const { code, error } = state.terserModule(state.outputText)
+
+      if (error) {
+        throw error
+      }
+
+      current = code
+    }
+
+    dispatch({ type: 'UPDATE_OUTPUT', value: current })
   })
 
   return (
@@ -132,48 +141,54 @@ const App = () => {
           byteCount={state.byteCount}
           processedOutput={state.outputText}
           useTypeScript={state.useTypeScript}
-          minify={state.minify}
+          minifyOutput={state.minifyOutput}
         />
       </div>
     </div>
   )
 }
 
-const TypeScriptToggle = ({ dispatch, useTypeScript }) => {
-  const handleChange = event => {
-    dispatch({ type: 'USE_TYPE_SCRIPT', checked: event.srcElement.checked })
-  }
+const TypeScriptToggle = ({ dispatch }) => {
   return (
     <label for="use-ts">
-      <input type="checkbox" id="use-ts" onChange={handleChange} checked={useTypeScript} />
+      <input
+        type="checkbox"
+        id="use-ts"
+        onChange={event => {
+          dispatch({ type: 'USE_TYPE_SCRIPT', checked: event.srcElement.checked })
+        }}
+      />
       Use TypeScript
     </label>
   )
 }
 
-const TerserToggle = ({ minify, dispatch }) => {
-  const handleChange = event => {
-    dispatch({ type: 'USE_TERSER', checked: event.srcElement.checked })
-  }
+const TerserToggle = ({ dispatch }) => {
   return (
     <label for="minify">
-      <input type="checkbox" id="minify" onChange={handleChange} checked={minify} />
+      <input
+        type="checkbox"
+        id="minify"
+        onChange={event => {
+          dispatch({ type: 'USE_TERSER', checked: event.srcElement.checked })
+        }}
+      />
       Minify
     </label>
   )
 }
 
-const OutputArea = ({ dispatch, processedOutput, byteCount, useTypeScript, minify }) => {
+const OutputArea = ({ dispatch, processedOutput, byteCount, useTypeScript, minifyOutput }) => {
   return (
     <div class="output-area">
       <div class="transformation-container">
-        <TypeScriptToggle dispatch={dispatch} useTypeScript={useTypeScript} />
-        <TerserToggle dispatch={dispatch} minify={minify} />
+        <TypeScriptToggle dispatch={dispatch} />
+        <TerserToggle dispatch={dispatch} />
+        <div>bytes: {byteCount}</div>
       </div>
 
-      <div>bytes: {byteCount}</div>
       <div class="output-text">
-        <CodeBlock isMinified={minify}>
+        <CodeBlock minifyOutput={minifyOutput} dispatch={dispatch}>
           <code>{processedOutput}</code>
         </CodeBlock>
       </div>
