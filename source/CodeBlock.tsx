@@ -1,6 +1,6 @@
 import { h } from 'preact'
 import { useRef, useEffect } from 'preact/hooks'
-import * as monaco from 'monaco-editor'
+import { editor } from 'monaco-editor'
 
 const CodeBlock = ({ value }) => {
   const domRef = useRef(null)
@@ -8,7 +8,7 @@ const CodeBlock = ({ value }) => {
 
   useEffect(() => {
     if (domRef.current && !monacoRef.current) {
-      const instance = monaco.editor.create(domRef.current, {
+      const instance = editor.create(domRef.current, {
         value,
         language: 'typescript',
         scrollBeyondLastLine: false,

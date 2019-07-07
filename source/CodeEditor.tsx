@@ -1,6 +1,6 @@
 import { h } from 'preact'
 import { useRef, useEffect } from 'preact/hooks'
-import * as monaco from 'monaco-editor'
+import { editor, languages } from 'monaco-editor'
 
 const CodeEditor = ({ dispatch }) => {
   const domRef = useRef(null)
@@ -8,16 +8,15 @@ const CodeEditor = ({ dispatch }) => {
 
   useEffect(() => {
     if (domRef.current && !monacoRef.current) {
-      monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-        target: monaco.languages.typescript.ScriptTarget.ESNext,
-        moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-        module: monaco.languages.typescript.ModuleKind.CommonJS,
+      languages.typescript.typescriptDefaults.setCompilerOptions({
+        target: languages.typescript.ScriptTarget.ESNext,
+        moduleResolution: languages.typescript.ModuleResolutionKind.NodeJs,
+        module: languages.typescript.ModuleKind.CommonJS,
         noEmit: true,
-        typeRoots: ['../node_modules/@types'],
-        jsx: monaco.languages.typescript.JsxEmit.React
+        jsx: languages.typescript.JsxEmit.React
       })
 
-      const instance = monaco.editor.create(domRef.current, {
+      const instance = editor.create(domRef.current, {
         value: textContent,
         language: 'typescript',
         scrollBeyondLastLine: false,

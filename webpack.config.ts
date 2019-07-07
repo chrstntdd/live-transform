@@ -5,13 +5,14 @@ import HtmlWebpackPlugin from 'html-webpack-plugin'
 import WebpackModules from 'webpack-modules'
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import { CleanWebpackPlugin } from 'clean-webpack-plugin'
+import Stylish from 'webpack-stylish'
 import InterpolatePlugin from 'react-dev-utils/InterpolateHtmlPlugin'
+import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 const IS_DEVELOPMENT = process.env.NODE_ENV === 'development'
-const IS_SSR = process.env.SSR === 'true'
 
-import { clientDevBuild, serverProdBuild, serverDevBuild } from './paths'
+import { clientDevBuild } from './paths'
 
 const publicPath = '/'
 
@@ -46,20 +47,13 @@ const config = {
   optimization: {
     splitChunks: {
       chunks: 'all'
-    },
-    runtimeChunk: !IS_SSR
+    }
   },
 
   entry: path.resolve(__dirname, 'source/index'),
 
   output: {
-    path: IS_PRODUCTION
-      ? clientDevBuild
-      : IS_SSR && IS_PRODUCTION
-      ? serverProdBuild
-      : IS_SSR && IS_DEVELOPMENT
-      ? serverDevBuild
-      : undefined,
+    path: IS_PRODUCTION ? clientDevBuild : undefined,
     pathinfo: IS_DEVELOPMENT,
     filename: 'static/js/[name].[hash:8].js',
     chunkFilename: 'static/js/[name].[chunkhash:8].chunk.js',
@@ -131,7 +125,7 @@ const config = {
 
     new CleanWebpackPlugin(),
 
-    // new MonacoWebpackPlugin(),
+    new MonacoWebpackPlugin(),
 
     new InterpolatePlugin(HtmlWebpackPlugin, {
       NORMALIZE: '<style>' + normalizeString + '</style>'
@@ -145,8 +139,12 @@ const config = {
 
     new WebpackModules(),
 
-    IS_DEVELOPMENT && new webpack.HotModuleReplacementPlugin()
+    IS_DEVELOPMENT && new webpack.HotModuleReplacementPlugin(),
+
+    new Stylish()
   ].filter(Boolean),
+
+  stats: 'minimal',
 
   node: {
     dgram: 'empty',

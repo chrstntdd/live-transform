@@ -1,5 +1,5 @@
-import { h, Component } from 'preact'
-import { useEffect, useRef, useReducer, useCallback } from 'preact/hooks'
+import { h } from 'preact'
+import { useEffect, useReducer } from 'preact/hooks'
 
 import { CodeBlock } from './CodeBlock'
 import { CodeEditor, textContent } from './CodeEditor'

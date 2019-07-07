@@ -4,17 +4,14 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "cross-env NODE_ENV='development' ./node_modules/.bin/webpack-dev-server --color -c webpack.config.ts",
-    "build": "cross-env NODE_ENV='production' ./node_modules/.bin/webpack -c webpack.config.ts",
-    "build-ssr": "cross-env NODE_ENV='development' SSR='true' ./node_modules/.bin/webpack -c webpack.config.ts && cross-env NODE_ENV='development' SSR='true' yarn start-server",
-    "prod-ssr": "cross-env NODE_ENV='production' SSR='true' ./node_modules/.bin/webpack -c webpack.config.ts && cross-env NODE_ENV='production' yarn start-server",
-    "start-server": "ts-node -T ./server/index.ts",
-    "prod": "yarn build && NODE_ENV='production' yarn start-server"
+    "start": "cross-env NODE_ENV='development' ./node_modules/.bin/webpack-dev-server --color -c webpack.config.ts --silent",
+    "build": "cross-env NODE_ENV='production' ./node_modules/.bin/webpack -c webpack.config.ts --silent",
+    "start-server": "cross-env SSR='true' ts-node -T ./server/index.ts",
+    "prod": "yarn build && cross-env NODE_ENV='production' yarn start-server"
   },
   "dependencies": {
     "monaco-editor": "^0.17.1",
     "preact": "^10.0.0-beta.3",
-    "preact-render-to-string": "^5.0.4",
     "terser": "^4.1.0"
   },
   "devDependencies": {
@@ -41,6 +38,7 @@
     "webpack": "^4.35.2",
     "webpack-cli": "^3.3.5",
     "webpack-dev-server": "^3.7.2",
-    "webpack-modules": "^1.0.0"
+    "webpack-modules": "^1.0.0",
+    "webpack-stylish": "^0.1.8"
   }
 }
