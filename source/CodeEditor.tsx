@@ -1,47 +1,45 @@
 import { h } from 'preact'
 import { useRef, useEffect } from 'preact/hooks'
-
-import { useModule } from './hooks'
+import * as monaco from 'monaco-editor'
 
 const CodeEditor = ({ dispatch }) => {
-  const cmRef = useRef(null)
-  const textAreaRef = useRef(null)
-  const codeMirrorModule = useModule(
-    async () =>
-      await import(/* webpackChunkName: "codemirror" */ 'codemirror').then(module => module)
-  )
+  const domRef = useRef(null)
+  const monacoRef = useRef(null)
 
   useEffect(() => {
-    if (textAreaRef.current && codeMirrorModule) {
-      const cm = codeMirrorModule.fromTextArea(textAreaRef.current, {
-        value: textContent,
-        mode: 'javascript',
-        theme: 'one-dark',
-        lineNumbers: true,
-        indentWithTabs: false,
-        tabSize: 2,
-        showCursorWhenSelecting: true,
-        extraKeys: {
-          'Cmd-/': 'toggleComment'
-        }
+    if (domRef.current && !monacoRef.current) {
+      monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+        target: monaco.languages.typescript.ScriptTarget.ESNext,
+        moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+        module: monaco.languages.typescript.ModuleKind.CommonJS,
+        noEmit: true,
+        typeRoots: ['../node_modules/@types'],
+        jsx: monaco.languages.typescript.JsxEmit.React
       })
+
+      const instance = monaco.editor.create(domRef.current, {
+        value: textContent,
+        language: 'typescript',
+        scrollBeyondLastLine: false,
+        fontFamily: 'Operator Mono Lig',
+        theme: 'vs-dark'
+      })
+
+      instance.onKeyDown(() => {
+        requestAnimationFrame(() => {
+          const value = instance.getValue()
+
+          dispatch({ type: 'CHANGE_INPUT', value })
+        })
+      })
+
       dispatch({ type: 'CHANGE_INPUT', value: textContent })
 
-      cm.on('change', () => {
-        const val = cm.getValue()
-
-        dispatch({ type: 'CHANGE_INPUT', value: val })
-      })
-
-      cmRef.current = cm
+      monacoRef.current = instance
     }
+  }, [])
 
-    return () => {
-      cmRef.current = null
-    }
-  }, [codeMirrorModule])
-
-  return <textarea ref={textAreaRef} autocomplete="off" defaultValue={textContent} />
+  return <div id="editor" ref={domRef} style={{ height: '100vh', width: '50vw' }} />
 }
 
 const textContent = `import React from 'react'

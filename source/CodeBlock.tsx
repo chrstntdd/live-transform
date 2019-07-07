@@ -1,30 +1,33 @@
 import { h } from 'preact'
+import { useRef, useEffect } from 'preact/hooks'
+import * as monaco from 'monaco-editor'
 
-import { useModule } from './hooks'
+const CodeBlock = ({ value }) => {
+  const domRef = useRef(null)
+  const monacoRef = useRef<null | ReturnType<typeof monaco.editor.create>>(null)
 
-const CodeBlock = ({ children, minifyOutput, ...props }) => {
-  const prismJSModule = useModule(
-    async () =>
-      await import(/* webpackChunkName: "prismjs" */ 'prismjs').then(module => module.default)
-  )
+  useEffect(() => {
+    if (domRef.current && !monacoRef.current) {
+      const instance = monaco.editor.create(domRef.current, {
+        value,
+        language: 'typescript',
+        scrollBeyondLastLine: false,
+        fontFamily: 'Operator Mono Lig',
+        theme: 'vs-dark',
+        wordWrap: 'on'
+      })
 
-  let child = children
-  let isHighlight = child && child.type === 'code'
+      monacoRef.current = instance
+    }
+  }, [])
 
-  if (isHighlight && child.props.children && prismJSModule) {
-    let text = child.props.children.replace(/(^\s+|\s+$)/g, '')
-    let highlighted = prismJSModule.highlight(
-      text,
-      prismJSModule.languages.javascript,
-      prismJSModule.languages.javascript
-    )
-    return (
-      <pre class={`language-javascript  ${props.class || ''} ${minifyOutput ? 'minified' : ''}`}>
-        <code dangerouslySetInnerHTML={{ __html: highlighted }} />
-      </pre>
-    )
-  }
-  return <pre {...props}>{children}</pre>
+  useEffect(() => {
+    if (monacoRef.current) {
+      monacoRef.current.setValue(value)
+    }
+  }, [value])
+
+  return <div id="code-block" ref={domRef} style={{ height: '100vh', width: '50vw' }} />
 }
 
 export { CodeBlock }

@@ -4,7 +4,7 @@ import webpack from 'webpack'
 import HtmlWebpackPlugin from 'html-webpack-plugin'
 import WebpackModules from 'webpack-modules'
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
-import CleanWebpackPlugin from 'clean-webpack-plugin'
+import { CleanWebpackPlugin } from 'clean-webpack-plugin'
 import InterpolatePlugin from 'react-dev-utils/InterpolateHtmlPlugin'
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
@@ -18,16 +18,6 @@ const publicPath = '/'
 try {
   var normalizeString = fs.readFileSync(
     path.join(__dirname, 'node_modules/normalize.css/normalize.css'),
-    'UTF-8'
-  )
-
-  var prismThemeString = fs.readFileSync(
-    path.join(__dirname, 'node_modules/prismjs/themes/prism.css'),
-    'UTF-8'
-  )
-
-  var codeMirrorString = fs.readFileSync(
-    path.join(__dirname, 'node_modules/codemirror/lib/codemirror.css'),
     'UTF-8'
   )
 } catch (error) {}
@@ -141,10 +131,10 @@ const config = {
 
     new CleanWebpackPlugin(),
 
+    // new MonacoWebpackPlugin(),
+
     new InterpolatePlugin(HtmlWebpackPlugin, {
-      NORMALIZE: '<style>' + normalizeString + '</style>',
-      PRISM_JS_THEME: '<style>' + prismThemeString + '</style>',
-      CODE_MIRROR_STYLES: '<style>' + codeMirrorString + '</style>'
+      NORMALIZE: '<style>' + normalizeString + '</style>'
     }),
 
     IS_PRODUCTION &&
