@@ -8,7 +8,7 @@
     "build": "rm -rf dist && NODE_ENV='production' ./node_modules/.bin/webpack -c webpack.config.ts"
   },
   "dependencies": {
-    "codemirror": "^5.44.0",
+    "codemirror": "^5.58.2",
     "preact": "^10.0.0-alpha.1",
     "prismjs": "^1.15.0",
     "terser": "^3.16.1"
